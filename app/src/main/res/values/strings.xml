@@ -4,5 +4,8 @@
     <string name="app_name">Camara example</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="photo_source">Titulo para foto</string>
+    <string name="camera">camara</string>
+    <string name="gallery">Galeria</string>
 
 </resources>

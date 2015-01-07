@@ -12,65 +12,96 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
+import com.jhonvidal.camaraexample.model.PictureData;
 import com.jhonvidal.camaraexample.util.PhotoUtils;
+import com.jhonvidal.camaraexample.util.Util;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity {
 
+    private LinearLayout layout;
+
     private AlertDialog _photoDialog;
-    private Uri mImageUri;
-    private static final int ACTIVITY_SELECT_IMAGE = 1020,
-            ACTIVITY_SELECT_FROM_CAMERA = 1040, ACTIVITY_SHARE = 1030;
+    private static final int ACTIVITY_SELECT_IMAGE = 1020;
+    private static final int ACTIVITY_SELECT_FROM_CAMERA = 1040;
+    private static final int ACTIVITY_SHARE = 1030;
+    private static int ACTIVITY_SELECT = 0;
+
     private PhotoUtils photoUtils;
-    private Button photoButton;
-    private ImageView photoViewer;
-    private Boolean fromShare;
+    private List<PictureData> pictureDatas = new ArrayList<PictureData>();
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        photoButton = (Button) findViewById(R.id.photoButton);
-        photoViewer = (ImageView) findViewById(R.id.photoViewer);
-        fromShare = false;
-
+        loadPictureData();
+        layout = (LinearLayout) View.inflate(this, R.layout.activity_main, null);
+        layout.addView(pictureDatas.get(0).imageView);
+        layout.addView(pictureDatas.get(1).imageView);
+        layout.addView(pictureDatas.get(2).imageView);
         photoUtils = new PhotoUtils(this);
-        // Get intent, action and MIME type
-        Intent intent = getIntent();
-        String action = intent.getAction();
-        String type = intent.getType();
-        if (Intent.ACTION_SEND.equals(action) && type != null) {
-            if ("text/plain".equals(type)) {
-                fromShare = true;
-            } else if (type.startsWith("image/")) {
-                fromShare = true;
-                mImageUri = (Uri) intent
-                        .getParcelableExtra(Intent.EXTRA_STREAM);
-                getImage(mImageUri);
-            }
-        }
-
-        setPhotoButton();
+        setClickItemImage();
+        setContentView(layout);
     }
 
-    private void setPhotoButton() {
-        photoButton.setOnClickListener(new View.OnClickListener() {
+    private void setClickItemImage() {
+
+        pictureDatas.get(0).imageView.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (!getPhotoDialog().isShowing() && !isFinishing())
-                    getPhotoDialog().show();
+                if (!getPhotoDialog(pictureDatas.get(0)).isShowing() && !isFinishing())
+                    getPhotoDialog(pictureDatas.get(0)).show();
             }
         });
+
+        pictureDatas.get(1).imageView.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (!getPhotoDialog(pictureDatas.get(1)).isShowing() && !isFinishing())
+                    getPhotoDialog(pictureDatas.get(1)).show();
+            }
+        });
+
+        pictureDatas.get(2).imageView.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (!getPhotoDialog(pictureDatas.get(2)).isShowing() && !isFinishing())
+                    getPhotoDialog(pictureDatas.get(2)).show();
+            }
+        });
+
     }
 
+    private void loadPictureData() {
 
-    private AlertDialog getPhotoDialog() {
+        ImageView imageView1 = new ImageView(this);
+        imageView1.setId(Util.generateViewId());
+        imageView1.setImageResource(R.drawable.ic_launcher);
+        ImageView imageView2 = new ImageView(this);
+        imageView2.setId(Util.generateViewId());
+        imageView2.setImageResource(R.drawable.ic_launcher);
+        ImageView imageView3 = new ImageView(this);
+        imageView3.setId(Util.generateViewId());
+        imageView3.setImageResource(R.drawable.ic_launcher);
+
+        Log.e("ID1", String.valueOf(imageView1.getId()));
+        Log.e("ID2", String.valueOf(imageView2.getId()));
+        Log.e("ID3", String.valueOf(imageView3.getId()));
+
+        PictureData pictureData1 = new PictureData(imageView1, true, null);
+        PictureData pictureData2 = new PictureData(imageView2, false, null);
+        PictureData pictureData3 = new PictureData(imageView3, false, null);
+
+        pictureDatas.add(pictureData1);
+        pictureDatas.add(pictureData2);
+        pictureDatas.add(pictureData3);
+    }
+
+    private AlertDialog getPhotoDialog(final PictureData pictureData) {
         if (_photoDialog == null) {
             AlertDialog.Builder builder = new AlertDialog.Builder(
                     this);
@@ -90,10 +121,10 @@ public class MainActivity extends ActionBarActivity {
                         Log.v(getClass().getSimpleName(),
                                 "Can't create file to take picture!");
                     }
-
-                    mImageUri = Uri.fromFile(photo);
-                    intent.putExtra(MediaStore.EXTRA_OUTPUT, mImageUri);
-                    startActivityForResult(intent, ACTIVITY_SELECT_FROM_CAMERA);
+                    ACTIVITY_SELECT = ACTIVITY_SELECT_FROM_CAMERA;
+                    pictureData.uri = Uri.fromFile(photo);
+                    intent.putExtra(MediaStore.EXTRA_OUTPUT, pictureData.uri);
+                    startActivityForResult(intent, pictureData.imageView.getId());
 
                 }
 
@@ -102,9 +133,10 @@ public class MainActivity extends ActionBarActivity {
 
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
+                    ACTIVITY_SELECT = ACTIVITY_SELECT_IMAGE;
                     Intent galleryIntent = new Intent(Intent.ACTION_GET_CONTENT);
                     galleryIntent.setType("image/*");
-                    startActivityForResult(galleryIntent, ACTIVITY_SELECT_IMAGE);
+                    startActivityForResult(galleryIntent, pictureData.imageView.getId());
                 }
 
             });
@@ -115,48 +147,61 @@ public class MainActivity extends ActionBarActivity {
 
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if (mImageUri != null)
-            outState.putString("Uri", mImageUri.toString());
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        if (savedInstanceState.containsKey("Uri")) {
-            mImageUri = Uri.parse(savedInstanceState.getString("Uri"));
-        }
-    }
+//    @Override
+//    protected void onSaveInstanceState(Bundle outState) {
+//        super.onSaveInstanceState(outState);
+//        int i = 1;
+//        for (PictureData pictureData : pictureDatas) {
+//            if (pictureData.uri != null)
+//                outState.putString("Uri" + String.valueOf(i), pictureData.uri.toString());
+//            i = i + 1;
+//        }
+//    }
+//
+//    @Override
+//    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+//        super.onRestoreInstanceState(savedInstanceState);
+//        int i = 1;
+//        for (PictureData pictureData : pictureDatas) {
+//            if (savedInstanceState.containsKey("Uri" + String.valueOf(i))) {
+//                pictureData.uri = Uri.parse(savedInstanceState.getString("Uri") + String.valueOf(i));
+//            }
+//            i = i + 1;
+//        }
+//    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == ACTIVITY_SELECT_IMAGE && resultCode == RESULT_OK) {
-            mImageUri = data.getData();
-            getImage(mImageUri);
-        } else if (requestCode == ACTIVITY_SELECT_FROM_CAMERA
-                && resultCode == RESULT_OK) {
-            getImage(mImageUri);
+        for (PictureData pictureData : pictureDatas) {
+
+            if (requestCode == pictureData.imageView.getId() && resultCode == RESULT_OK && ACTIVITY_SELECT == ACTIVITY_SELECT_IMAGE) {
+                pictureData.uri = data.getData();
+                getImage(pictureData.uri, pictureData);
+            } else {
+                if (pictureData.imageView != null && requestCode == pictureData.imageView.getId()
+                        && resultCode == RESULT_OK) {
+                    getImage(pictureData.uri, pictureData);
+                }
+            }
         }
     }
 
-    public void getImage(Uri uri) {
+    public void getImage(Uri uri, PictureData pictureData) {
         Bitmap bounds = photoUtils.getImage(uri);
         if (bounds != null) {
-            setImageBitmap(bounds);
+            setImageBitmap(bounds, pictureData);
         } else {
             showErrorToast();
         }
     }
 
     private void showErrorToast() {
-       Log.e("ERROR","ERROR AL CARGAR");
+        Log.e("ERROR", "ERROR AL CARGAR");
     }
 
-    private void setImageBitmap(Bitmap bitmap){
-        photoViewer.setImageBitmap(bitmap);
+    private void setImageBitmap(Bitmap bitmap, PictureData pictureData) {
+        pictureData.imageView.setImageBitmap(bitmap);
     }
 
 

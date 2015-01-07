@@ -26,6 +26,7 @@ public class PhotoUtils {
                                            Context myContext) throws Exception {
         String path = myContext.getExternalCacheDir().getAbsolutePath()
                 + "/temp/";
+
         Log.e("DDD",path);
 
         File tempDir = new File(path);

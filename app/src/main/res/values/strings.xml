@@ -7,5 +7,6 @@
     <string name="photo_source">Titulo para foto</string>
     <string name="camera">camara</string>
     <string name="gallery">Galeria</string>
+    <string name="title_activity_example_camara_static">ExampleCamaraStaticActivity</string>
 
 </resources>
